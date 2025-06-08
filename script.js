@@ -131,12 +131,6 @@ function renderNextBatch() {
             productCard.appendChild(saleBadge);
         }
 
-        const variantList = product.variants.map(v => {
-            const v1 = v.variant1 ? `<strong>${v.variant1}</strong>` : '';
-            const v2 = v.variant2 ? `<strong>${v.variant2}</strong>` : '';
-            return `<li>${v1}${v1 && v2 ? ', ' : ''}${v2}</li>`;
-        }).join('');
-
         productCard.innerHTML += `
             <div class="product-image-container">
                 <img src="${imageUrl}" alt="${product.itemName}" class="product-image"
@@ -145,7 +139,6 @@ function renderNextBatch() {
             <div class="product-content">
                 <h3>${product.itemName}</h3>
                 <p>${product.description}</p>
-                ${variantList ? `<ul class="product-variants-display">${variantList}</ul>` : ''}
                 <div class="price-info">${priceHtml}</div>
                 <p class="stock-info">Stock: <span class="${product.currentOnHand <= 0 ? 'out-of-stock-label' : ''}">
                     ${product.currentOnHand}

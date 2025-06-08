@@ -120,6 +120,7 @@ h2 {
     color: #777;
     grid-column: 1 / -1; /* Span across all columns in grid */
     background-color: rgb(255, 255, 255);
+    width: 50%
 }
 
 /* Responsive Adjustments */
