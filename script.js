@@ -2,6 +2,7 @@
 const GOOGLE_SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxqy3TZk6BzoikhbAjmvd5aOMKenHe0AGY_NOTaPKY0P9czcQg4rBI-EMi-3v5G9yPfrA/exec';
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded. Initiating product fetch...');
     fetchProducts();
 });
 
@@ -11,20 +12,31 @@ let productListingsCache = [];
 // --- Product Fetching and Display ---
 async function fetchProducts() {
     const productListings = document.getElementById('product-listings');
+    if (!productListings) {
+        console.error('Error: #product-listings element not found in HTML. Cannot display products.');
+        return; // Exit if the container isn't found
+    }
     productListings.innerHTML = '<p class="loading-message">Loading products...</p>';
+    console.log('Attempting to fetch products from API:', GOOGLE_SHEET_API_URL);
 
     try {
         const response = await fetch(GOOGLE_SHEET_API_URL);
+        console.log('Received response from API. Status:', response.status);
+
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            // Log specific HTTP error if response is not OK
+            const errorText = await response.text(); // Get raw response text for more info
+            console.error(`HTTP error! Status: ${response.status}. Response text: ${errorText}`);
+            throw new Error(`HTTP error! Status: ${response.status}. Check your Google Apps Script for errors.`);
         }
+
         const data = await response.json();
+        console.log("Successfully parsed JSON data. Data received:", data); // For debugging purposes
 
         productListingsCache = data; // Populate the cache
 
-        console.log("Fetched Data:", data); // For debugging purposes
-
-        if (!data || data.length === 0) {
+        if (!data || !Array.isArray(data) || data.length === 0) {
+            console.warn('API returned no products or data is not an array.');
             productListings.innerHTML = '<p class="loading-message">No products found.</p>';
             return;
         }
@@ -32,11 +44,24 @@ async function fetchProducts() {
         productListings.innerHTML = ''; // Clear loading message
 
         // Process data for display - Each row from the sheet is a distinct item/variant
-        data.forEach(item => {
+        data.forEach((item, index) => {
             // Skip rows without an item name or if it's potentially a blank row from the sheet
-            if (!item.itemName || item.itemName === '') {
+            if (!item.itemName || String(item.itemName).trim() === '') {
+                console.warn(`Skipping row ${index + 3} (data row ${index + 1}) due to missing or empty Item Name. Item data:`, item);
                 return;
             }
+
+            // Validate essential fields before rendering
+            if (item.id === null || item.id === undefined) {
+                console.warn(`Item at row ${index + 3} has no ID. Skipping or handling with care. Item:`, item);
+                // You might choose to skip this item or assign a fallback ID
+                // For now, we'll continue, but be aware it might affect unique identification later
+            }
+            if (item.currentOnHand === null || item.currentOnHand === undefined) {
+                 console.warn(`Item "${item.itemName}" at row ${index + 3} has no 'Stock' (currentOnHand) value. Defaulting to 0 for display. Item:`, item);
+                 item.currentOnHand = 0; // Provide a default if missing
+            }
+
 
             const productCard = document.createElement('div');
             productCard.classList.add('product-card');
@@ -60,10 +85,10 @@ async function fetchProducts() {
                 priceHtml = `$${originalPrice.toFixed(2)}`;
             }
 
-            // Fallback for image if URL is missing or broken
+            // Fallback for image if URL is missing, invalid, or broken
             // Using a dynamic placeholder based on item name if no image is provided
             // Takes first 10 characters of item name for placeholder text
-            const imageUrl = item.image && item.image.startsWith('http') ? item.image : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(item.itemName.substring(0, Math.min(item.itemName.length, 10)))}`;
+            const imageUrl = item.image && String(item.image).startsWith('http') ? item.image : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(String(item.itemName).substring(0, Math.min(String(item.itemName).length, 10)))}`;
 
             productCard.innerHTML = `
                 <div class="product-image-container">
@@ -87,8 +112,9 @@ async function fetchProducts() {
         });
 
     } catch (error) {
-        productListings.innerHTML = '<p class="loading-message error-message">Error loading products. Please try again later.</p>';
-        console.error("Failed to fetch products:", error);
-        // Removed showAlert as there's no modal in this minimal version
+        // More descriptive error message for the user in the console
+        productListings.innerHTML = '<p class="loading-message error-message">Error loading products. Please check the browser console for details.</p>';
+        console.error("Failed to fetch or process products:", error);
+        console.error("Possible causes: Incorrect API URL, Google Apps Script error, CORS issues, or invalid JSON response.");
     }
 }
