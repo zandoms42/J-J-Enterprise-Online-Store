@@ -1,120 +1,152 @@
-// **IMPORTANT:** Replace this URL with your actual Google Apps Script Web App URL
 const GOOGLE_SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxqy3TZk6BzoikhbAjmvd5aOMKenHe0AGY_NOTaPKY0P9czcQg4rBI-EMi-3v5G9yPfrA/exec';
 
+let productListingsCache = [];
+let productsPerPage = 20;
+let currentOffset = 0;
+
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM Content Loaded. Initiating product fetch...');
     fetchProducts();
 });
 
-// Cache the fetched product listings (still useful even without a cart for future additions)
-let productListingsCache = [];
-
-// --- Product Fetching and Display ---
 async function fetchProducts() {
     const productListings = document.getElementById('product-listings');
+    const loadMoreButton = document.getElementById('load-more-button');
+
     if (!productListings) {
-        console.error('Error: #product-listings element not found in HTML. Cannot display products.');
-        return; // Exit if the container isn't found
+        console.error('Error: #product-listings element not found.');
+        return;
     }
+
     productListings.innerHTML = '<p class="loading-message">Loading products...</p>';
-    console.log('Attempting to fetch products from API:', GOOGLE_SHEET_API_URL);
 
     try {
         const response = await fetch(GOOGLE_SHEET_API_URL);
-        console.log('Received response from API. Status:', response.status);
-
         if (!response.ok) {
-            // Log specific HTTP error if response is not OK
-            const errorText = await response.text(); // Get raw response text for more info
-            console.error(`HTTP error! Status: ${response.status}. Response text: ${errorText}`);
-            throw new Error(`HTTP error! Status: ${response.status}. Check your Google Apps Script for errors.`);
+            const errorText = await response.text();
+            throw new Error(`HTTP error ${response.status}: ${errorText}`);
         }
 
         const data = await response.json();
-        console.log("Successfully parsed JSON data. Data received:", data); // For debugging purposes
-
-        productListingsCache = data; // Populate the cache
-
-        if (!data || !Array.isArray(data) || data.length === 0) {
-            console.warn('API returned no products or data is not an array.');
-            productListings.innerHTML = '<p class="loading-message">No products found.</p>';
+        if (!Array.isArray(data) || data.length === 0) {
+            productListings.innerHTML = '<p>No products found.</p>';
             return;
         }
 
-        productListings.innerHTML = ''; // Clear loading message
+        // --- Group and sanitize data ---
+        const grouped = new Map();
+        const cleanNumber = (val) => {
+            if (val == null || val === '') return 0;
+            const num = parseFloat(String(val).replace(/[^\d.-]/g, ''));
+            return isNaN(num) ? 0 : num;
+        };
 
-        // Process data for display - Each row from the sheet is a distinct item/variant
-        data.forEach((item, index) => {
-            // Skip rows without an item name or if it's potentially a blank row from the sheet
-            if (!item.itemName || String(item.itemName).trim() === '') {
-                console.warn(`Skipping row ${index + 3} (data row ${index + 1}) due to missing or empty Item Name. Item data:`, item);
-                return;
+        for (const item of data) {
+            if (!item.id) continue;
+
+            const id = item.id;
+            const product = {
+                id,
+                itemName: item.itemName?.trim() || 'Unnamed Item',
+                description: item.description || '',
+                image: item.image,
+                unitSale: cleanNumber(item.unitSale),
+                discountPrice: cleanNumber(item.discountPrice),
+                currentOnHand: cleanNumber(item.currentOnHand),
+                variants: [],
+            };
+
+            if (item.variant1 || item.variant2) {
+                product.variants.push({
+                    variant1: item.variant1 || null,
+                    variant2: item.variant2 || null,
+                });
             }
 
-            // Validate essential fields before rendering
-            if (item.id === null || item.id === undefined) {
-                console.warn(`Item at row ${index + 3} has no ID. Skipping or handling with care. Item:`, item);
-                // You might choose to skip this item or assign a fallback ID
-                // For now, we'll continue, but be aware it might affect unique identification later
-            }
-            if (item.currentOnHand === null || item.currentOnHand === undefined) {
-                 console.warn(`Item "${item.itemName}" at row ${index + 3} has no 'Stock' (currentOnHand) value. Defaulting to 0 for display. Item:`, item);
-                 item.currentOnHand = 0; // Provide a default if missing
-            }
-
-
-            const productCard = document.createElement('div');
-            productCard.classList.add('product-card');
-
-            // Determine effective price for display
-            const originalPrice = parseFloat(item.unitSale);
-            // discountPrice might be null or 0 if no discount is set in the sheet
-            const discountPrice = parseFloat(item.discountPrice); 
-            const displayPrice = (discountPrice !== null && !isNaN(discountPrice) && discountPrice < originalPrice) ? discountPrice : originalPrice;
-            const isDiscounted = (discountPrice !== null && !isNaN(discountPrice) && discountPrice < originalPrice);
-
-            let priceHtml = '';
-            if (isDiscounted) {
-                priceHtml = `<span class="original-price">$${originalPrice.toFixed(2)}</span> <span class="discounted-price">$${displayPrice.toFixed(2)}</span>`;
-                // Add a "SALE" badge if discounted
-                const saleBadge = document.createElement('div');
-                saleBadge.classList.add('sale-badge');
-                saleBadge.textContent = 'SALE!';
-                productCard.appendChild(saleBadge);
+            if (grouped.has(id)) {
+                const existing = grouped.get(id);
+                const variantKey = (v) => `${v.variant1 ?? ''}|${v.variant2 ?? ''}`;
+                const existingKeys = new Set(existing.variants.map(variantKey));
+                for (const v of product.variants) {
+                    if (!existingKeys.has(variantKey(v))) {
+                        existing.variants.push(v);
+                    }
+                }
             } else {
-                priceHtml = `$${originalPrice.toFixed(2)}`;
+                grouped.set(id, product);
             }
+        }
 
-            // Fallback for image if URL is missing, invalid, or broken
-            // Using a dynamic placeholder based on item name if no image is provided
-            // Takes first 10 characters of item name for placeholder text
-            const imageUrl = item.image && String(item.image).startsWith('http') ? item.image : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(String(item.itemName).substring(0, Math.min(String(item.itemName).length, 10)))}`;
+        productListings.innerHTML = '';
+        productListingsCache = Array.from(grouped.values());
+        currentOffset = 0;
 
-            productCard.innerHTML = `
-                <div class="product-image-container">
-                    <img src="${imageUrl}" alt="${item.itemName}" class="product-image" onerror="this.onerror=null;this.src='https://placehold.co/200x200/cccccc/333333?text=Image+N/A';">
-                </div>
-                <div class="product-content">
-                    <h3>${item.itemName}</h3>
-                    <p>${item.description || 'No description available.'}</p>
-                    ${item.variant1 || item.variant2 ? `<p class="product-variants-display">
-                        ${item.variant1 ? `<strong>${item.variant1}</strong>` : ''}
-                        ${item.variant1 && item.variant2 ? `, ` : ''}
-                        ${item.variant2 ? `<strong>${item.variant2}</strong>` : ''}
-                    </p>` : ''}
-                    <div class="price-info">${priceHtml}</div>
-                    <p class="stock-info">Stock: <span class="${item.currentOnHand <= 0 ? 'out-of-stock-label' : ''}">${item.currentOnHand !== null ? item.currentOnHand : 'N/A'}</span></p>
-                    <!-- Removed Add to Cart button as no cart functionality in this minimal version -->
-                </div>
-            `;
+        renderNextBatch();
 
-            productListings.appendChild(productCard);
-        });
+        if (loadMoreButton) {
+            loadMoreButton.style.display = productListingsCache.length > productsPerPage ? 'block' : 'none';
+            loadMoreButton.onclick = renderNextBatch;
+        }
 
-    } catch (error) {
-        // More descriptive error message for the user in the console
-        productListings.innerHTML = '<p class="loading-message error-message">Error loading products. Please check the browser console for details.</p>';
-        console.error("Failed to fetch or process products:", error);
-        console.error("Possible causes: Incorrect API URL, Google Apps Script error, CORS issues, or invalid JSON response.");
+    } catch (err) {
+        productListings.innerHTML = '<p class="error-message">Error loading products.</p>';
+        console.error("Error during product fetch:", err);
+    }
+}
+
+function renderNextBatch() {
+    const productListings = document.getElementById('product-listings');
+    const loadMoreButton = document.getElementById('load-more-button');
+
+    const slice = productListingsCache.slice(currentOffset, currentOffset + productsPerPage);
+    slice.forEach(product => {
+        const productCard = document.createElement('div');
+        productCard.classList.add('product-card');
+
+        const isDiscounted = product.discountPrice > 0 && product.discountPrice < product.unitSale;
+        const displayPrice = isDiscounted ? product.discountPrice : product.unitSale;
+        const priceHtml = isDiscounted
+            ? `<span class="original-price">$${product.unitSale.toFixed(2)}</span> <span class="discounted-price">$${displayPrice.toFixed(2)}</span>`
+            : `$${displayPrice.toFixed(2)}`;
+
+        const imageUrl = product.image && product.image.startsWith('http')
+            ? product.image
+            : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName.substring(0, 10))}`;
+
+        if (isDiscounted) {
+            const saleBadge = document.createElement('div');
+            saleBadge.classList.add('sale-badge');
+            saleBadge.textContent = 'SALE!';
+            productCard.appendChild(saleBadge);
+        }
+
+        const variantList = product.variants.map(v => {
+            const v1 = v.variant1 ? `<strong>${v.variant1}</strong>` : '';
+            const v2 = v.variant2 ? `<strong>${v.variant2}</strong>` : '';
+            return `<li>${v1}${v1 && v2 ? ', ' : ''}${v2}</li>`;
+        }).join('');
+
+        productCard.innerHTML += `
+            <div class="product-image-container">
+                <img src="${imageUrl}" alt="${product.itemName}" class="product-image"
+                     onerror="this.onerror=null;this.src='https://placehold.co/200x200/cccccc/333333?text=Image+N/A';">
+            </div>
+            <div class="product-content">
+                <h3>${product.itemName}</h3>
+                <p>${product.description}</p>
+                ${variantList ? `<ul class="product-variants-display">${variantList}</ul>` : ''}
+                <div class="price-info">${priceHtml}</div>
+                <p class="stock-info">Stock: <span class="${product.currentOnHand <= 0 ? 'out-of-stock-label' : ''}">
+                    ${product.currentOnHand}
+                </span></p>
+            </div>
+        `;
+
+        productListings.appendChild(productCard);
+    });
+
+    currentOffset += productsPerPage;
+
+    if (currentOffset >= productListingsCache.length && loadMoreButton) {
+        loadMoreButton.style.display = 'none';
     }
 }
