@@ -99,8 +99,12 @@ function renderNextBatch() {
 
     const slice = productListingsCache.slice(currentOffset, currentOffset + productsPerPage);
     slice.forEach(product => {
-        const productCard = document.createElement('div');
+        const productCard = document.createElement('button');
         productCard.classList.add('product-card');
+        productCard.onclick = () => {
+            window.location.href = `product.html?id=${encodeURIComponent(product.id)}`;
+        };
+
 
         const isDiscounted = product.discountPrice > 0 && product.discountPrice < product.unitSale;
         const displayPrice = isDiscounted ? product.discountPrice : product.unitSale;
