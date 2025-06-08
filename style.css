@@ -3,10 +3,12 @@ body {
     font-family: 'Arial', sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f8f8f8;
+    background: url('https://sorensen.house.gov/sites/evo-subsites/sorensen.house.gov/files/evo-media-image/services-flags-samuel-branch-unsplash.jpg') no-repeat center center fixed;
+    background-size: cover;
     color: #333;
     line-height: 1.6;
-    overflow-x: hidden; /* Prevent horizontal scroll */
+    overflow-x: hidden;
+    backdrop-filter: blur(2px); /* optional: gives text better contrast */
 }
 
 .container {
@@ -34,7 +36,7 @@ h2 {
 
 /* Product Card */
 .product-card {
-    background-color: white;
+    background-color: rgba(255, 255, 255, 0.95);;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     overflow: hidden;
@@ -194,21 +196,4 @@ h2 {
     text-decoration: underline;
 }
 
-body {
-    font-family: 'Arial', sans-serif;
-    margin: 0;
-    padding: 0;
-    background: url('https://sorensen.house.gov/sites/evo-subsites/sorensen.house.gov/files/evo-media-image/services-flags-samuel-branch-unsplash.jpg') no-repeat center center fixed;
-    background-size: cover;
-    color: #333;
-    line-height: 1.6;
-    overflow-x: hidden;
-    backdrop-filter: blur(2px); /* optional: gives text better contrast */
-}
 
-main.container {
-    background-color: rgba(255, 255, 255, 0.95); /* white glassy foreground */
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-}
