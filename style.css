@@ -5,7 +5,7 @@ body {
     padding: 0;
     background: url('https://sorensen.house.gov/sites/evo-subsites/sorensen.house.gov/files/evo-media-image/services-flags-samuel-branch-unsplash.jpg') no-repeat center center fixed;
     background-size: cover;
-    color: #333;
+    color: #000000;
     line-height: 1.6;
     overflow-x: hidden;
     backdrop-filter: blur(2px); /* optional: gives text better contrast */
@@ -119,6 +119,7 @@ h2 {
     text-align: center;
     color: #777;
     grid-column: 1 / -1; /* Span across all columns in grid */
+    background-color: rgb(255, 255, 255);
 }
 
 /* Responsive Adjustments */
@@ -181,5 +182,3 @@ h2 {
 .site-footer a:hover {
     text-decoration: underline;
 }
-
-
