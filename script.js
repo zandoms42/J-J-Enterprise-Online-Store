@@ -38,8 +38,6 @@ async function fetchProducts() {
             if (!item.id) continue;
             const id = item.id;
 
-            const variantKey = `${item.variant1 || ''}|${item.variant2 || ''}`;
-
             if (!grouped.has(id)) {
                 grouped.set(id, {
                     id,
@@ -47,9 +45,8 @@ async function fetchProducts() {
                     description: item.description || '',
                     image: String(item.image || '').trim(),
                     unitSale: item.unitSale || '',
-                    discountPrice: item.discountPrice || '',
                     currentOnHand: 0,
-                    variantCount: 0
+                    variantCount: 0,
                 });
             }
 
@@ -84,10 +81,9 @@ function renderNextBatch() {
     slice.forEach(product => {
         if (!product) return;
 
-        const imageUrl = String(product.image || '').startsWith('http')
+        const imageUrl = product.image.startsWith('http')
             ? product.image
             : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName.substring(0, 10))}`;
-
 
         const productCard = document.createElement('button');
         productCard.classList.add('product-card');
@@ -95,8 +91,7 @@ function renderNextBatch() {
             window.location.href = `product.html?id=${encodeURIComponent(product.id)}`;
         };
 
-
-        productCard.innerHTML += `
+        productCard.innerHTML = `
             <div class="product-image-container">
                 <img src="${imageUrl}" alt="${product.itemName}" class="product-image"
                      onerror="this.onerror=null;this.src='https://placehold.co/200x200/cccccc/333333?text=Image+N/A';">
