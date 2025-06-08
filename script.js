@@ -43,15 +43,13 @@ async function fetchProducts() {
         for (const item of data) {
             if (!item.id) continue;
 
-            // Sanitize image: ensure string or empty string
-            const imageSafe = typeof item.image === 'string' ? item.image.trim() : '';
-
             const id = item.id;
             const product = {
                 id,
                 itemName: item.itemName?.trim() || 'Unnamed Item',
                 description: item.description || '',
-                image: imageSafe,
+                // Force image to string here:
+                image: String(item.image || '').trim(),
                 unitSale: cleanNumber(item.unitSale),
                 discountPrice: cleanNumber(item.discountPrice),
                 currentOnHand: cleanNumber(item.currentOnHand),
@@ -102,6 +100,18 @@ function renderNextBatch() {
 
     const slice = productListingsCache.slice(currentOffset, currentOffset + productsPerPage);
     slice.forEach(product => {
+        if (!product) {
+            console.warn('Skipping invalid product:', product);
+            return;
+        }
+
+        // Defensive: ensure image is string before using startsWith
+        const imageStr = String(product.image || '').trim();
+
+        const imageUrl = imageStr.startsWith('http')
+            ? imageStr
+            : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName.substring(0, 10))}`;
+
         const productCard = document.createElement('button');
         productCard.classList.add('product-card');
         productCard.onclick = () => {
@@ -113,12 +123,6 @@ function renderNextBatch() {
         const priceHtml = isDiscounted
             ? `<span class="original-price">$${product.unitSale.toFixed(2)}</span> <span class="discounted-price">$${displayPrice.toFixed(2)}</span>`
             : `$${displayPrice.toFixed(2)}`;
-
-        // Defensive check: convert to string and trim
-        const imageStr = String(product.image || '').trim();
-        const imageUrl = imageStr.startsWith('http')
-            ? imageStr
-            : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName.substring(0, 10))}`;
 
         if (isDiscounted) {
             const saleBadge = document.createElement('div');
