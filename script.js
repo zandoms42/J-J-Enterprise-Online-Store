@@ -112,7 +112,11 @@ function renderNextBatch() {
             ? `<span class="original-price">$${product.unitSale.toFixed(2)}</span> <span class="discounted-price">$${displayPrice.toFixed(2)}</span>`
             : `$${displayPrice.toFixed(2)}`;
 
-        const imageUrl = product.image && product.image.startsWith('http')
+        const imageStr = String(product.image || '').trim();
+        const imageUrl = imageStr.startsWith('http')
+            ? imageStr
+            : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName.substring(0, 10))}`;
+
             ? product.image
             : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName.substring(0, 10))}`;
 
