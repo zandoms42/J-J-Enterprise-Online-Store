@@ -33,16 +33,11 @@ async function fetchProducts() {
         }
 
         const grouped = new Map();
-        const cleanNumber = (val) => {
-            if (val == null || val === '') return 0;
-            const num = parseFloat(String(val).replace(/[^\d.-]/g, ''));
-            return isNaN(num) ? 0 : num;
-        };
 
         for (const item of data) {
             if (!item.id) continue;
-
             const id = item.id;
+
             const variantKey = `${item.variant1 || ''}|${item.variant2 || ''}`;
 
             if (!grouped.has(id)) {
@@ -51,19 +46,16 @@ async function fetchProducts() {
                     itemName: item.itemName?.trim() || 'Unnamed Item',
                     description: item.description || '',
                     image: String(item.image || '').trim(),
-                    unitSale: cleanNumber(item.unitSale),
-                    discountPrice: cleanNumber(item.discountPrice),
-                    currentOnHand: cleanNumber(item.currentOnHand),
-                    variantKeys: new Set(item.variant1 || item.variant2 ? [variantKey] : [])
+                    unitSale: item.unitSale || '',
+                    discountPrice: item.discountPrice || '',
+                    currentOnHand: 0,
+                    variantCount: 0
                 });
-            } else {
-                const existing = grouped.get(id);
-                existing.currentOnHand += cleanNumber(item.currentOnHand);
-
-                if (item.variant1 || item.variant2) {
-                    existing.variantKeys.add(variantKey);
-                }
             }
+
+            const product = grouped.get(id);
+            product.currentOnHand += Number(item.currentOnHand || 0);
+            product.variantCount += 1;
         }
 
         productListings.innerHTML = '';
@@ -88,33 +80,26 @@ function renderNextBatch() {
     const loadMoreButton = document.getElementById('load-more-button');
 
     const slice = productListingsCache.slice(currentOffset, currentOffset + productsPerPage);
-    slice.forEach(product => {
-        if (!product) {
-            console.warn('Skipping invalid product:', product);
-            return;
-        }
 
-        const imageStr = String(product.image || '').trim();
-        const imageUrl = imageStr.startsWith('http')
-            ? imageStr
+    slice.forEach(product => {
+        if (!product) return;
+
+        const imageUrl = String(product.image || '').startsWith('http')
+            ? product.image
             : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName.substring(0, 10))}`;
+
+        const isDiscounted = product.discountPrice && product.discountPrice !== product.unitSale;
+        const displayPrice = isDiscounted ? product.discountPrice : product.unitSale;
+
+        const priceHtml = isDiscounted
+            ? `<span class="original-price">${product.unitSale}</span> <span class="discounted-price">${displayPrice}</span>`
+            : `${displayPrice}`;
 
         const productCard = document.createElement('button');
         productCard.classList.add('product-card');
         productCard.onclick = () => {
             window.location.href = `product.html?id=${encodeURIComponent(product.id)}`;
         };
-
-        const isDiscounted = product.discountPrice > 0 && product.discountPrice < product.unitSale;
-        const displayPrice = isDiscounted ? product.discountPrice : product.unitSale;
-        const priceHtml = isDiscounted
-            ? `<span class="original-price">$${product.unitSale.toFixed(2)}</span> <span class="discounted-price">$${displayPrice.toFixed(2)}</span>`
-            : `$${displayPrice.toFixed(2)}`;
-
-        const variantCount = product.variantKeys?.size || 0;
-        const variantInfo = variantCount > 0
-            ? `<p class="variant-info">${variantCount} variant${variantCount > 1 ? 's' : ''} available</p>`
-            : '';
 
         if (isDiscounted) {
             const saleBadge = document.createElement('div');
@@ -131,7 +116,7 @@ function renderNextBatch() {
             <div class="product-content">
                 <h3>${product.itemName}</h3>
                 <p>${product.description}</p>
-                ${variantInfo}
+                <p class="variant-count">Variants: ${product.variantCount}</p>
                 <div class="price-info">${priceHtml}</div>
                 <p class="stock-info">Stock: <span class="${product.currentOnHand <= 0 ? 'out-of-stock-label' : ''}">
                     ${product.currentOnHand}
