@@ -20,7 +20,7 @@ body {
 /* Section Headings */
 h2 {
     text-align: center;
-    color: #4CAF50; /* A friendly green */
+    color: #008395; /* A friendly green */
     margin-top: 40px;
     margin-bottom: 20px;
     font-size: 2em;
@@ -108,22 +108,8 @@ h2 {
     font-size: 1.2em; /* Slightly larger for emphasis */
 }
 
-.sale-badge {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    background-color: #ff9800; /* Orange for sale tag */
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-weight: bold;
-    font-size: 0.8em;
-    z-index: 10; /* Ensure it's above other elements */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
 .out-of-stock-label {
-    color: #e74c3c; /* Red for out of stock */
+    color: #900e00; /* Red for out of stock */
     font-weight: bold;
     margin-top: 5px;
 }
@@ -164,7 +150,7 @@ h2 {
 #load-more-button {
     padding: 12px 24px;
     font-size: 1rem;
-    background-color: #4CAF50;
+    background-color: #008395;
     color: white;
     border: none;
     border-radius: 6px;
@@ -173,7 +159,7 @@ h2 {
 }
 
 #load-more-button:hover {
-    background-color: #45a049;
+    background-color:  #006a78;
 }
 
 /* Footer Contact Section */
@@ -188,7 +174,7 @@ h2 {
 }
 
 .site-footer a {
-    color: #4CAF50;
+    color: #008395;
     text-decoration: none;
 }
 
