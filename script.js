@@ -88,12 +88,6 @@ function renderNextBatch() {
             ? product.image
             : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName.substring(0, 10))}`;
 
-        const isDiscounted = product.discountPrice && product.discountPrice !== product.unitSale;
-        const displayPrice = isDiscounted ? product.discountPrice : product.unitSale;
-
-        const priceHtml = isDiscounted
-            ? `<span class="original-price">${product.unitSale}</span> <span class="discounted-price">${displayPrice}</span>`
-            : `${displayPrice}`;
 
         const productCard = document.createElement('button');
         productCard.classList.add('product-card');
@@ -101,12 +95,6 @@ function renderNextBatch() {
             window.location.href = `product.html?id=${encodeURIComponent(product.id)}`;
         };
 
-        if (isDiscounted) {
-            const saleBadge = document.createElement('div');
-            saleBadge.classList.add('sale-badge');
-            saleBadge.textContent = 'SALE!';
-            productCard.appendChild(saleBadge);
-        }
 
         productCard.innerHTML += `
             <div class="product-image-container">
@@ -117,7 +105,7 @@ function renderNextBatch() {
                 <h3>${product.itemName}</h3>
                 <p>${product.description}</p>
                 <p class="variant-count">Variants: ${product.variantCount}</p>
-                <div class="price-info">${priceHtml}</div>
+                <div class="price-info">${product.unitSale}</div>
                 <p class="stock-info">Stock: <span class="${product.currentOnHand <= 0 ? 'out-of-stock-label' : ''}">
                     ${product.currentOnHand}
                 </span></p>
