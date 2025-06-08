@@ -43,12 +43,15 @@ async function fetchProducts() {
         for (const item of data) {
             if (!item.id) continue;
 
+            // Sanitize image: ensure string or empty string
+            const imageSafe = typeof item.image === 'string' ? item.image.trim() : '';
+
             const id = item.id;
             const product = {
                 id,
                 itemName: item.itemName?.trim() || 'Unnamed Item',
                 description: item.description || '',
-                image: item.image,
+                image: imageSafe,
                 unitSale: cleanNumber(item.unitSale),
                 discountPrice: cleanNumber(item.discountPrice),
                 currentOnHand: cleanNumber(item.currentOnHand),
@@ -105,19 +108,16 @@ function renderNextBatch() {
             window.location.href = `product.html?id=${encodeURIComponent(product.id)}`;
         };
 
-
         const isDiscounted = product.discountPrice > 0 && product.discountPrice < product.unitSale;
         const displayPrice = isDiscounted ? product.discountPrice : product.unitSale;
         const priceHtml = isDiscounted
             ? `<span class="original-price">$${product.unitSale.toFixed(2)}</span> <span class="discounted-price">$${displayPrice.toFixed(2)}</span>`
             : `$${displayPrice.toFixed(2)}`;
 
+        // Defensive check: convert to string and trim
         const imageStr = String(product.image || '').trim();
         const imageUrl = imageStr.startsWith('http')
             ? imageStr
-            : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName.substring(0, 10))}`;
-
-            ? product.image
             : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName.substring(0, 10))}`;
 
         if (isDiscounted) {
