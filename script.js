@@ -32,7 +32,6 @@ async function fetchProducts() {
             return;
         }
 
-        // --- Group and sanitize data ---
         const grouped = new Map();
         const cleanNumber = (val) => {
             if (val == null || val === '') return 0;
@@ -44,36 +43,26 @@ async function fetchProducts() {
             if (!item.id) continue;
 
             const id = item.id;
-            const product = {
-                id,
-                itemName: item.itemName?.trim() || 'Unnamed Item',
-                description: item.description || '',
-                // Force image to string here:
-                image: String(item.image || '').trim(),
-                unitSale: cleanNumber(item.unitSale),
-                discountPrice: cleanNumber(item.discountPrice),
-                currentOnHand: cleanNumber(item.currentOnHand),
-                variants: [],
-            };
+            const variantKey = `${item.variant1 || ''}|${item.variant2 || ''}`;
 
-            if (item.variant1 || item.variant2) {
-                product.variants.push({
-                    variant1: item.variant1 || null,
-                    variant2: item.variant2 || null,
+            if (!grouped.has(id)) {
+                grouped.set(id, {
+                    id,
+                    itemName: item.itemName?.trim() || 'Unnamed Item',
+                    description: item.description || '',
+                    image: String(item.image || '').trim(),
+                    unitSale: cleanNumber(item.unitSale),
+                    discountPrice: cleanNumber(item.discountPrice),
+                    currentOnHand: cleanNumber(item.currentOnHand),
+                    variantKeys: new Set(item.variant1 || item.variant2 ? [variantKey] : [])
                 });
-            }
-
-            if (grouped.has(id)) {
-                const existing = grouped.get(id);
-                const variantKey = (v) => `${v.variant1 ?? ''}|${v.variant2 ?? ''}`;
-                const existingKeys = new Set(existing.variants.map(variantKey));
-                for (const v of product.variants) {
-                    if (!existingKeys.has(variantKey(v))) {
-                        existing.variants.push(v);
-                    }
-                }
             } else {
-                grouped.set(id, product);
+                const existing = grouped.get(id);
+                existing.currentOnHand += cleanNumber(item.currentOnHand);
+
+                if (item.variant1 || item.variant2) {
+                    existing.variantKeys.add(variantKey);
+                }
             }
         }
 
@@ -105,9 +94,7 @@ function renderNextBatch() {
             return;
         }
 
-        // Defensive: ensure image is string before using startsWith
         const imageStr = String(product.image || '').trim();
-
         const imageUrl = imageStr.startsWith('http')
             ? imageStr
             : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName.substring(0, 10))}`;
@@ -124,6 +111,11 @@ function renderNextBatch() {
             ? `<span class="original-price">$${product.unitSale.toFixed(2)}</span> <span class="discounted-price">$${displayPrice.toFixed(2)}</span>`
             : `$${displayPrice.toFixed(2)}`;
 
+        const variantCount = product.variantKeys?.size || 0;
+        const variantInfo = variantCount > 0
+            ? `<p class="variant-info">${variantCount} variant${variantCount > 1 ? 's' : ''} available</p>`
+            : '';
+
         if (isDiscounted) {
             const saleBadge = document.createElement('div');
             saleBadge.classList.add('sale-badge');
@@ -139,6 +131,7 @@ function renderNextBatch() {
             <div class="product-content">
                 <h3>${product.itemName}</h3>
                 <p>${product.description}</p>
+                ${variantInfo}
                 <div class="price-info">${priceHtml}</div>
                 <p class="stock-info">Stock: <span class="${product.currentOnHand <= 0 ? 'out-of-stock-label' : ''}">
                     ${product.currentOnHand}
