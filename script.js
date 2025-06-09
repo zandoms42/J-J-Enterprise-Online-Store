@@ -97,10 +97,6 @@ function renderNextBatch() {
             window.location.href = `product.html?id=${encodeURIComponent(product.id)}`;
         };
 
-        // Prepare price text using raw string, fallback if empty or null
-        const priceTextRaw = product.unitSale ?? '';
-        const priceText = priceTextRaw.trim() !== '' ? `$${priceTextRaw}` : 'Price N/A';
-
         productCard.innerHTML = `
             <div class="product-image-container">
                 <img src="${imageUrl}" alt="${product.itemName}" class="product-image"
@@ -109,7 +105,7 @@ function renderNextBatch() {
             <div class="product-content">
                 <h3>${product.itemName}</h3>
                 <p>${product.description}</p>
-                <div class="price-info">${priceText}</div>
+                <div class="price-info">${product.unitSale}</div>
                 <p class="stock-info">Stock: <span class="${product.currentOnHand <= 0 ? 'out-of-stock-label' : ''}">
                     ${product.currentOnHand}
                 </span></p>
