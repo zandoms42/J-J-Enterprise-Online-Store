@@ -91,6 +91,12 @@ function renderNextBatch() {
             ? product.image
             : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName.substring(0, 10))}`;
 
+        // Prepare the variant count HTML if there are multiple variants
+        let variantCountHTML = '';
+        if (product.variants.length > 1) {
+            variantCountHTML = `<p class="variant-count">${product.variants.length} different variants available</p>`;
+        }
+
         const productCard = document.createElement('button');
         productCard.classList.add('product-card');
         productCard.onclick = () => {
@@ -100,25 +106,18 @@ function renderNextBatch() {
         productCard.innerHTML = `
             <div class="product-image-container">
                 <img src="${imageUrl}" alt="${product.itemName}" class="product-image"
-                     onerror="this.onerror=null;this.src='https://placehold.co/200x200/cccccc/333333?text=Image+N/A';">
+                    onerror="this.onerror=null;this.src='https://placehold.co/200x200/cccccc/333333?text=Image+N/A';">
             </div>
             <div class="product-content">
                 <h3>${product.itemName}</h3>
                 <p>${product.description}</p>
+                ${variantCountHTML}
                 <div class="price-info">${"$" + product.unitSale.toFixed(2)}</div>
                 <p class="stock-info">Stock: <span class="${product.currentOnHand <= 0 ? 'out-of-stock-label' : ''}">
                     ${product.currentOnHand}
                 </span></p>
             </div>
         `;
-
-        // Add variant count only if there are multiple variants
-        if (product.variants.length > 1) {
-            const variantCountElem = document.createElement('p');
-            variantCountElem.className = 'variant-count';
-            variantCountElem.textContent = `${product.variants.length} variants`;
-            productCard.querySelector('.product-content').appendChild(variantCountElem);
-        }
 
         productListings.appendChild(productCard);
     });

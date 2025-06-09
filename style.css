@@ -8,7 +8,7 @@ body {
     color: #000000;
     line-height: 1.6;
     overflow-x: hidden;
-    backdrop-filter: blur(2px); /* optional: gives text better contrast */
+    backdrop-filter: blur(2px);
 }
 
 .container {
@@ -20,7 +20,7 @@ body {
 /* Section Headings */
 h2 {
     text-align: center;
-    color: #008395; /* A friendly green */
+    color: #008395;
     margin-top: 40px;
     margin-bottom: 20px;
     font-size: 2em;
@@ -97,17 +97,6 @@ h2 {
     gap: 8px;
 }
 
-.original-price {
-    text-decoration: line-through;
-    color: #888;
-    font-size: 0.8em; /* Smaller text for original price */
-}
-
-.discounted-price {
-    color: #e74c3c; /* Red for discount */
-    font-size: 1.2em; /* Slightly larger for emphasis */
-}
-
 .out-of-stock-label {
     color: #900e00; /* Red for out of stock */
     font-weight: bold;
@@ -119,7 +108,7 @@ h2 {
     text-align: center;
     color: #777;
     width: fit-content;
-    background-color: rgb(255, 255, 255);
+    background-color: rgba(255, 255, 255, 0.8);
 }
 
 /* Responsive Adjustments */
@@ -165,13 +154,12 @@ h2 {
 
 /* Footer Contact Section */
 .site-footer {
-    background-color: #eaeaea;
+    background-color: rgba(255, 255, 255, 0.8);
     color: #333;
     text-align: center;
     padding: 20px;
     font-size: 0.95em;
     margin-top: 40px;
-    border-top: 1px solid #ccc;
 }
 
 .site-footer a {
