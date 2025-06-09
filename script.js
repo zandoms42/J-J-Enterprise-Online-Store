@@ -27,7 +27,6 @@ async function fetchProducts() {
         }
 
         const data = await response.json();
-        console.log("Fetched JSON data from Google Sheet API:", data);
         if (!Array.isArray(data) || data.length === 0) {
             productListings.innerHTML = '<p>No products found.</p>';
             return;
@@ -106,7 +105,7 @@ function renderNextBatch() {
             <div class="product-content">
                 <h3>${product.itemName}</h3>
                 <p>${product.description}</p>
-                <div class="price-info">${product.unitSale}</div>
+                <div class="price-info">$${product.unitSale}</div>
                 <p class="stock-info">Stock: <span class="${product.currentOnHand <= 0 ? 'out-of-stock-label' : ''}">
                     ${product.currentOnHand}
                 </span></p>
