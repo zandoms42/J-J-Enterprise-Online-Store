@@ -45,13 +45,13 @@ async function fetchProducts() {
                     description: item.description || '',
                     image: String(item.image || '').trim(),
                     unitSale: item.unitSale || '',
-                    currentOnHand: 0,
+                    Stock: 0,
                     variants: [], // store variants here
                 });
             }
 
             const product = grouped.get(id);
-            product.currentOnHand += Number(item.currentOnHand || 0);
+            product.Stock += Number(item.Stock || 0);
 
             // Collect variant info (variant1, variant2, or you can store the whole item)
             product.variants.push({
@@ -113,8 +113,8 @@ function renderNextBatch() {
                 <p>${product.description}</p>
                 ${variantCountHTML}
                 <div class="price-info">${"$" + product.unitSale.toFixed(2)}</div>
-                <p class="stock-info">Stock: <span class="${product.currentOnHand <= 0 ? 'out-of-stock-label' : ''}">
-                    ${product.currentOnHand}
+                <p class="stock-info">Stock: <span class="${product.Stock <= 0 ? 'out-of-stock-label' : ''}">
+                    ${product.Stock}
                 </span></p>
             </div>
         `;
