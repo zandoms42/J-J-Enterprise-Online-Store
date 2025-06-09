@@ -91,6 +91,8 @@ function renderNextBatch() {
             window.location.href = `product.html?id=${encodeURIComponent(product.id)}`;
         };
 
+        const priceText = (product.unitSale != null && product.unitSale !== '') ? product.unitSale : 'Price N/A';
+
         productCard.innerHTML = `
             <div class="product-image-container">
                 <img src="${imageUrl}" alt="${product.itemName}" class="product-image"
@@ -100,7 +102,7 @@ function renderNextBatch() {
                 <h3>${product.itemName}</h3>
                 <p>${product.description}</p>
                 <p class="variant-count">Variants: ${product.variantCount}</p>
-                <div class="price-info">${product.unitSale}</div>
+                <div class="price-info">${priceText}</div>
                 <p class="stock-info">Stock: <span class="${product.currentOnHand <= 0 ? 'out-of-stock-label' : ''}">
                     ${product.currentOnHand}
                 </span></p>
