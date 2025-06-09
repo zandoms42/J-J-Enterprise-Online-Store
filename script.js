@@ -27,6 +27,7 @@ async function fetchProducts() {
         }
 
         const data = await response.json();
+        console.log("Fetched JSON data from Google Sheet API:", data);
         if (!Array.isArray(data) || data.length === 0) {
             productListings.innerHTML = '<p>No products found.</p>';
             return;
