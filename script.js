@@ -105,7 +105,7 @@ function renderNextBatch() {
             <div class="product-content">
                 <h3>${product.itemName}</h3>
                 <p>${product.description}</p>
-                <div class="price-info">$${product.unitSale}</div>
+                <div class="price-info">${"$" + product.unitSale.toFixed(2)}</div>
                 <p class="stock-info">Stock: <span class="${product.currentOnHand <= 0 ? 'out-of-stock-label' : ''}">
                     ${product.currentOnHand}
                 </span></p>
