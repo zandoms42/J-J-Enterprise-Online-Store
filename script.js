@@ -46,13 +46,19 @@ async function fetchProducts() {
                     image: String(item.image || '').trim(),
                     unitSale: item.unitSale || '',
                     currentOnHand: 0,
-                    variantCount: 0,
+                    variants: [], // store variants here
                 });
             }
 
             const product = grouped.get(id);
             product.currentOnHand += Number(item.currentOnHand || 0);
-            product.variantCount += 1;
+
+            // Collect variant info (variant1, variant2, or you can store the whole item)
+            product.variants.push({
+                variant1: item.variant1 || '',
+                variant2: item.variant2 || '',
+                // other variant-specific fields can go here
+            });
         }
 
         productListings.innerHTML = '';
@@ -91,7 +97,9 @@ function renderNextBatch() {
             window.location.href = `product.html?id=${encodeURIComponent(product.id)}`;
         };
 
-        const priceText = (product.unitSale != null && product.unitSale !== '') ? product.unitSale : 'Price N/A';
+        // Prepare price text using raw string, fallback if empty or null
+        const priceTextRaw = product.unitSale ?? '';
+        const priceText = priceTextRaw.trim() !== '' ? `$${priceTextRaw}` : 'Price N/A';
 
         productCard.innerHTML = `
             <div class="product-image-container">
@@ -101,13 +109,20 @@ function renderNextBatch() {
             <div class="product-content">
                 <h3>${product.itemName}</h3>
                 <p>${product.description}</p>
-                <p class="variant-count">Variants: ${product.variantCount}</p>
                 <div class="price-info">${priceText}</div>
                 <p class="stock-info">Stock: <span class="${product.currentOnHand <= 0 ? 'out-of-stock-label' : ''}">
                     ${product.currentOnHand}
                 </span></p>
             </div>
         `;
+
+        // Add variant count only if there are multiple variants
+        if (product.variants.length > 1) {
+            const variantCountElem = document.createElement('p');
+            variantCountElem.className = 'variant-count';
+            variantCountElem.textContent = `${product.variants.length} variants`;
+            productCard.querySelector('.product-content').appendChild(variantCountElem);
+        }
 
         productListings.appendChild(productCard);
     });
