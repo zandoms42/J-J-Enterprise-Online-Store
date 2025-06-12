@@ -1,18 +1,25 @@
 const GOOGLE_SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxqy3TZk6BzoikhbAjmvd5aOMKenHe0AGY_NOTaPKY0P9czcQg4rBI-EMi-3v5G9yPfrA/exec';
 
+console.log('product.js loaded!');
+
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded and parsed.');
     renderProductVariants();
 });
 
 function getCart() {
-    return JSON.parse(localStorage.getItem('cart') || '[]');
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    console.log('Current cart:', cart);
+    return cart;
 }
 
 function saveCart(cart) {
     localStorage.setItem('cart', JSON.stringify(cart));
+    console.log('Cart saved:', cart);
 }
 
 function addToCart(productId, variant) {
+    console.log('Adding to cart:', { productId, variant });
     const cart = getCart();
     cart.push({
         productId,
@@ -25,6 +32,7 @@ function addToCart(productId, variant) {
 }
 
 async function renderProductVariants() {
+    console.log('renderProductVariants called');
     const variantListings = document.getElementById('variant-listings');
     const urlParams = new URLSearchParams(window.location.search);
     const productId = urlParams.get('id');
@@ -33,14 +41,21 @@ async function renderProductVariants() {
 
     if (!productId) {
         variantListings.innerHTML = '<p class="error-message">No product ID specified.</p>';
+        console.warn('No product ID specified in URL.');
         return;
     }
 
     try {
+        console.log('Fetching product data from:', GOOGLE_SHEET_API_URL);
         const response = await fetch(GOOGLE_SHEET_API_URL);
-        if (!response.ok) throw new Error('Failed to fetch product data');
-        const data = await response.json();
+        console.log('Fetch response:', response);
 
+        if (!response.ok) {
+            console.error('Fetch failed with status:', response.status);
+            throw new Error('Failed to fetch product data');
+        }
+
+        const data = await response.json();
         console.log('Fetched data:', data);
 
         // Find all rows with the matching product ID (loose equality for type mismatch)
@@ -53,6 +68,7 @@ async function renderProductVariants() {
 
         if (!variants.length) {
             variantListings.innerHTML = '<p class="error-message">Product not found.</p>';
+            console.warn('No variants found for productId:', productId);
             return;
         }
 
@@ -88,6 +104,7 @@ async function renderProductVariants() {
             `;
 
             variantListings.appendChild(card);
+            console.log('Rendered card for variant:', variant);
         });
 
         // Add event listeners for Add to Cart buttons
@@ -95,11 +112,15 @@ async function renderProductVariants() {
             btn.addEventListener('click', (e) => {
                 const idx = e.target.getAttribute('data-idx');
                 const selectedVariant = variants[idx];
+                console.log('Add to Cart button clicked for idx:', idx, 'variant:', selectedVariant);
                 addToCart(productId, selectedVariant);
             });
         });
 
+        console.log('All variant cards rendered and event listeners attached.');
+
     } catch (err) {
         variantListings.innerHTML = '<p class="error-message">Error loading product.</p>';
-        console.error(err);
+        console.error('Error in renderProductVariants:', err);
     }
+}
