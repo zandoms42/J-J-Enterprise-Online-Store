@@ -77,9 +77,12 @@ async function renderProductVariants() {
         variantListings.innerHTML = '';
 
         variants.forEach((variant, idx) => {
-            const imageUrl = variant.image && variant.image.startsWith('http')
-                ? variant.image
-                : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName ? product.itemName.substring(0, 10) : 'No+Name')}`;
+            let imageUrl = '';
+            if (typeof variant.image === 'string' && variant.image.startsWith('http')) {
+                imageUrl = variant.image;
+            } else {
+                imageUrl = `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName ? product.itemName.substring(0, 10) : 'No+Name')}`;
+            }
 
             const variantName = [variant.variant1, variant.variant2].filter(Boolean).join(' / ') || 'Default';
 
