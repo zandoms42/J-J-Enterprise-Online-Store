@@ -18,7 +18,7 @@ function addToCart(productId, variant) {
         productId,
         variant1: variant.variant1 || null,
         variant2: variant.variant2 || null,
-        quantity: 1 // You can expand this later
+        quantity: 1
     });
     saveCart(cart);
     alert('Added to cart!');
@@ -28,6 +28,8 @@ async function renderProductVariants() {
     const variantListings = document.getElementById('variant-listings');
     const urlParams = new URLSearchParams(window.location.search);
     const productId = urlParams.get('id');
+
+    console.log('Product ID from URL:', productId);
 
     if (!productId) {
         variantListings.innerHTML = '<p class="error-message">No product ID specified.</p>';
@@ -39,8 +41,15 @@ async function renderProductVariants() {
         if (!response.ok) throw new Error('Failed to fetch product data');
         const data = await response.json();
 
-        // Find all rows with the matching product ID
-        const variants = data.filter(item => item.id === productId);
+        console.log('Fetched data:', data);
+
+        // Find all rows with the matching product ID (loose equality for type mismatch)
+        const variants = data.filter(item => {
+            console.log('Comparing item.id:', item.id, 'to productId:', productId);
+            return item.id == productId;
+        });
+
+        console.log('Filtered variants:', variants);
 
         if (!variants.length) {
             variantListings.innerHTML = '<p class="error-message">Product not found.</p>';
@@ -54,7 +63,7 @@ async function renderProductVariants() {
         variants.forEach((variant, idx) => {
             const imageUrl = variant.image && variant.image.startsWith('http')
                 ? variant.image
-                : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName.substring(0, 10))}`;
+                : `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName ? product.itemName.substring(0, 10) : 'No+Name')}`;
 
             const variantName = [variant.variant1, variant.variant2].filter(Boolean).join(' / ') || 'Default';
 
@@ -63,16 +72,16 @@ async function renderProductVariants() {
 
             card.innerHTML = `
                 <div class="product-image-container">
-                    <img src="${imageUrl}" alt="${product.itemName}" class="product-image"
+                    <img src="${imageUrl}" alt="${product.itemName || 'Product'}" class="product-image"
                         onerror="this.onerror=null;this.src='https://placehold.co/200x200/cccccc/333333?text=Image+N/A';">
                 </div>
                 <div class="product-content">
-                    <h3>${product.itemName}</h3>
-                    <p>${product.description}</p>
+                    <h3>${product.itemName || 'No Name'}</h3>
+                    <p>${product.description || ''}</p>
                     <p class="variant-info"><strong>Variant:</strong> ${variantName}</p>
-                    <div class="price-info">${"$" + Number(variant.unitSale).toFixed(2)}</div>
+                    <div class="price-info">${variant.unitSale ? "$" + Number(variant.unitSale).toFixed(2) : ''}</div>
                     <p class="stock-info">Stock: <span class="${Number(variant.Stock) <= 0 ? 'out-of-stock-label' : ''}">
-                        ${variant.Stock}
+                        ${variant.Stock || 0}
                     </span></p>
                     <button class="add-to-cart-btn" data-idx="${idx}">Add to Cart</button>
                 </div>
@@ -94,4 +103,3 @@ async function renderProductVariants() {
         variantListings.innerHTML = '<p class="error-message">Error loading product.</p>';
         console.error(err);
     }
-}
