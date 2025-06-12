@@ -78,8 +78,11 @@ async function renderProductVariants() {
 
         variants.forEach((variant, idx) => {
             let imageUrl = '';
+            // Robust image URL check
             if (typeof variant.image === 'string' && variant.image.startsWith('http')) {
                 imageUrl = variant.image;
+            } else if (variant.image && typeof variant.image === 'object' && variant.image.url && typeof variant.image.url === 'string' && variant.image.url.startsWith('http')) {
+                imageUrl = variant.image.url;
             } else {
                 imageUrl = `https://placehold.co/200x200/cccccc/333333?text=${encodeURIComponent(product.itemName ? product.itemName.substring(0, 10) : 'No+Name')}`;
             }
